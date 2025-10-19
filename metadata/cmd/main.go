@@ -12,7 +12,8 @@ import (
 	"movieexample.com/gen"
 	"movieexample.com/metadata/internal/controller/metadata"
 	grpchandler "movieexample.com/metadata/internal/handler/grpc"
-	"movieexample.com/metadata/internal/repository/moemory"
+	"movieexample.com/metadata/internal/repository/postgres"
+	"movieexample.com/pkg/config"
 	"movieexample.com/pkg/discovery"
 	discoveryconsul "movieexample.com/pkg/discovery/consul"
 )
@@ -43,7 +44,13 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, ServiceName)
 
-	repo := moemory.New()
+	conf := config.GetConfig()
+
+	repo, err := postgres.New(conf.GetDBConnectionString())
+	if err != nil {
+		panic(err)
+	}
+
 	ctrl := metadata.New(repo)
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))

@@ -17,14 +17,37 @@ type controllerInterface interface {
 	Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error
 }
 
+type ratingIngester interface {
+	Ingest(ctx context.Context) (chan model.RatingEvent, error)
+}
+
 // Controller define a rating service controller
 type Controller struct {
-	repo controllerInterface
+	repo     controllerInterface
+	ingester ratingIngester
 }
 
 // New create a rating service controller
-func New(repo controllerInterface) *Controller {
-	return &Controller{repo: repo}
+func New(repo controllerInterface, ingest ratingIngester) *Controller {
+	return &Controller{
+		repo:     repo,
+		ingester: ingest,
+	}
+}
+
+// StartIngestion starts the ingestion of rating events.
+func (c *Controller) StartIngestion(ctx context.Context) error {
+	ch, err := c.ingester.Ingest(ctx)
+	if err != nil {
+		return err
+	}
+	for e := range ch {
+		if err := c.PutRating(ctx, e.RecordID, e.RecordType,
+			&model.Rating{UserID: model.UserID(e.UserID), Value: e.Value}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetAggregatedRating returns the aggregated rating for
