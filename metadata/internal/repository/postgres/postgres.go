@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	_ "github.com/lib/pq"
 	"movieexample.com/metadata/internal/repository"
 	"movieexample.com/metadata/pkg/model"
 )

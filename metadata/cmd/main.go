@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -21,17 +20,16 @@ import (
 const ServiceName = "metadata"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8081, "API handler port")
-	flag.Parse()
 	log.Printf("startign the metadata service")
+
 	registry, err := discoveryconsul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
 	}
+	cfg := config.GetConfig()
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(ServiceName)
-	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%d", port)); err != nil {
+	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port)); err != nil {
 		panic(err)
 	}
 	go func() {
@@ -44,16 +42,14 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, ServiceName)
 
-	conf := config.GetConfig()
-
-	repo, err := postgres.New(conf.GetDBConnectionString())
+	repo, err := postgres.New(cfg.GetDBConnectionString())
 	if err != nil {
 		panic(err)
 	}
 
 	ctrl := metadata.New(repo)
 	h := grpchandler.New(ctrl)
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", cfg.ServiceConfig.APIConfig.Port))
 	if err != nil {
 		log.Fatalf("failed to listen:%v", err)
 	}

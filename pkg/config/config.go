@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 )
 
 // DBConfig contains the database connection configuration.
@@ -14,7 +16,15 @@ type DBConfig struct {
 
 // Config represent all the configuration in the jsonfile.
 type Config struct {
-	DB DBConfig `json:"DB"`
+	DB            DBConfig `json:"DB"`
+	ServiceConfig serviceConfig
+}
+
+type serviceConfig struct {
+	APIConfig apiConfig `yaml:"api"`
+}
+type apiConfig struct {
+	Port string `yaml:"port"`
 }
 
 var (
@@ -35,6 +45,14 @@ func LoadConfig(filename string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing the configuration: %w", err)
 	}
+	f, err := os.Open("base.yaml")
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	if err := yaml.NewDecoder(f).Decode(&config.ServiceConfig); err != nil {
+		return nil, err
+	}
 
 	return &config, nil
 }
@@ -45,7 +63,7 @@ func GetConfig() *Config {
 		var err error
 		instance, err = LoadConfig("config.json")
 		if err != nil {
-			instance, err = LoadConfig("../config.json")
+			instance, err = LoadConfig("../../config.json")
 			if err != nil {
 				panic(fmt.Sprintf("Error loading configuración: %v", err))
 			}

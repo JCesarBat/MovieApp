@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	metadatagrpc "movieexample.com/movie/internal/gateway/grpc/metadata"
 	ratingrpc "movieexample.com/movie/internal/gateway/grpc/rating"
 	"movieexample.com/movie/internal/handler"
+	"movieexample.com/pkg/config"
 	"movieexample.com/pkg/discovery"
 	discoveryconsul "movieexample.com/pkg/discovery/consul"
 )
@@ -19,17 +19,17 @@ import (
 const ServiceName = "movie"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8083, "API handler port")
-	flag.Parse()
+
 	log.Printf("startign the metadata service")
+
+	cfg := config.GetConfig()
 	registry, err := discoveryconsul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
 	}
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(ServiceName)
-	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%d", port)); err != nil {
+	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port)); err != nil {
 		panic(err)
 	}
 	go func() {
@@ -46,9 +46,9 @@ func main() {
 
 	ctrl := controller.New(ratingGateway, metadataGateway)
 	h := handler.New(ctrl)
-	log.Println("the server is running in port 8083")
+	log.Printf("the server is running in port %s", cfg.ServiceConfig.APIConfig.Port)
 	http.Handle("/movie", http.HandlerFunc(h.GetMovieDetails))
-	if err := http.ListenAndServe(":8083", nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port), nil); err != nil {
 		panic(err)
 	}
 }

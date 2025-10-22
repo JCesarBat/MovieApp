@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -11,20 +10,20 @@ import (
 
 	"google.golang.org/grpc"
 	"movieexample.com/gen"
+	"movieexample.com/pkg/config"
 	"movieexample.com/pkg/discovery"
 	discoveryconsul "movieexample.com/pkg/discovery/consul"
 	"movieexample.com/rating/internal/controller"
 	"movieexample.com/rating/internal/handler"
-	"movieexample.com/rating/internal/repository/memory"
+	"movieexample.com/rating/internal/repository/postgrers"
 )
 
 const ServiceName = "rating"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8082, "API handler port")
-	flag.Parse()
+
 	log.Printf("startign the rating service")
+	cfg := config.GetConfig()
 	registry, err := discoveryconsul.NewRegistry("localhost:8500")
 
 	if err != nil {
@@ -32,7 +31,7 @@ func main() {
 	}
 	ctx := context.Background()
 	instanceID := discovery.GenerateInstanceID(ServiceName)
-	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%d", port)); err != nil {
+	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port)); err != nil {
 		panic(err)
 	}
 	go func() {
@@ -44,12 +43,14 @@ func main() {
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, ServiceName)
-
-	repo := memory.New()
-	ctrl := controller.New(repo)
+	repo, err := postgrers.New(cfg.GetDBConfig().ConnectionString)
+	if err != nil {
+		panic(err)
+	}
+	ctrl := controller.New(repo, nil)
 	h := handler.NewGrpcHandler(ctrl)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port))
 	if err != nil {
 		log.Fatalf("failed to listen:%v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	_ "github.com/lib/pq"
 	"movieexample.com/rating/internal/repository"
 	model "movieexample.com/rating/pkg"
 )
@@ -48,4 +49,10 @@ func (r *Repository) Get(ctx context.Context, recordID model.RecordID, recordTyp
 	}
 	return res, nil
 }
-func (r *Repository) Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error
+
+// Put adds a rating for a given record.\
+func (r *Repository) Put(ctx context.Context, recordID model.RecordID, recordType model.RecordType, rating *model.Rating) error {
+	_, err := r.db.ExecContext(ctx, "INSERT INTO ratings d(record_id, record_type, user_id, value) VALUES (?, ?, ?, ?)",
+		recordID, recordType, rating.UserID, rating.Value)
+	return err
+}
