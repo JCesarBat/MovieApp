@@ -6,8 +6,34 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"movieexample.com/movie/internal/controller"
 )
+
+// HttpServer define a httpServer struct
+type HttpServer struct {
+	handler *Handler
+	addrs   string
+}
+
+// NewHttpServer creates a new httpServer
+func NewHttpServer(h *Handler, addrs string) *HttpServer {
+	return &HttpServer{
+		handler: h,
+		addrs:   addrs,
+	}
+}
+
+// NewServer return a pointer to http.Server who recives
+// a httpServer
+func NewServer(s *HttpServer) *http.Server {
+	r := mux.NewRouter()
+	r.Handle("/", http.HandlerFunc(s.handler.GetMovieDetails)).Methods("GET")
+	return &http.Server{
+		Addr:    s.addrs,
+		Handler: r,
+	}
+}
 
 // Handler defines a movie handler.
 type Handler struct {

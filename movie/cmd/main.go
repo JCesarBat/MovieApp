@@ -2,9 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"movieexample.com/movie/internal/controller"
@@ -20,14 +25,14 @@ const ServiceName = "movie"
 
 func main() {
 
-	log.Printf("startign the metadata service")
+	log.Printf("startign the movie service")
 
 	cfg := config.GetConfig()
 	registry, err := discoveryconsul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	instanceID := discovery.GenerateInstanceID(ServiceName)
 	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port)); err != nil {
 		panic(err)
@@ -46,9 +51,26 @@ func main() {
 
 	ctrl := controller.New(ratingGateway, metadataGateway)
 	h := handler.New(ctrl)
-	log.Printf("the server is running in port %s", cfg.ServiceConfig.APIConfig.Port)
-	http.Handle("/movie", http.HandlerFunc(h.GetMovieDetails))
-	if err := http.ListenAndServe(fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port), nil); err != nil {
-		panic(err)
+	s := handler.NewHttpServer(h, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port))
+	httpServer := handler.NewServer(s)
+
+	// Configuring the gracefullShutDown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s := <-sigChan
+		cancel()
+		log.Printf("Received signal %v, attempting graceful shutdown", s)
+		httpServer.Shutdown(ctx)
+		log.Println("Gracefully stopped the http server")
+	}()
+	if err := httpServer.ListenAndServe(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
 	}
+	wg.Wait()
 }
