@@ -3,6 +3,8 @@ package metadatagrpc
 import (
 	"context"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"movieexample.com/gen"
 	"movieexample.com/metadata/pkg/model"
 	"movieexample.com/pkg/discovery"
@@ -30,11 +32,30 @@ func (g *Gateway) Get(ctx context.Context, id string) (*model.Metadata, error) {
 	}
 	defer conn.Close()
 	client := gen.NewMetadataServiceClient(conn)
-	resp, err := client.GetMetadata(ctx, &gen.GetMetadataRequest{
-		MovieId: id,
-	})
-	if err != nil {
-		return nil, err
+	const maxRetry = 5
+	var resp *gen.GetMetadataResponse
+	for i := 0; i < maxRetry; i++ {
+		resp, err = client.GetMetadata(ctx, &gen.GetMetadataRequest{
+			MovieId: id,
+		})
+		if err != nil {
+			if shouldRetry(err) {
+				continue
+			}
+			return nil, err
+		}
+		return model.MetadataFromProto(resp.GetMetadata()), nil
 	}
-	return model.MetadataFromProto(resp.GetMetadata()), nil
+	return nil, err
+}
+
+// shouldRetry only retry true if are retryable
+// errors
+func shouldRetry(err error) bool {
+	e, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	return e.Code() == codes.DeadlineExceeded || e.Code() ==
+		codes.ResourceExhausted || e.Code() == codes.Unavailable
 }

@@ -40,5 +40,13 @@ func (h *Handler) GetMetadata(ctx context.Context, m *gen.GetMetadataRequest) (*
 	}, nil
 }
 func (h *Handler) PutMetadata(ctx context.Context, m *gen.PutMetadataRequest) (*gen.PutMetadataResponse, error) {
-	return nil, nil
+	if m == nil || m.Metadata.Id == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "nil req or empty id")
+	}
+
+	err := h.ctrl.Put(ctx, m.Metadata.Id, model.MetadataFromProto(m.Metadata))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "internal server error")
+	}
+	return &gen.PutMetadataResponse{}, nil
 }

@@ -24,7 +24,7 @@ func NewGrpcHandler(ctrl *controller.Controller) *GrpcHandler {
 
 // GetAggregatedRating returns a aggregated record rating value.
 func (h *GrpcHandler) GetAggregatedRating(ctx context.Context, req *gen.GetAggregatedRatingRequest) (*gen.GetAggregatedRatingResponse, error) {
-	if req.RecordId == "" || req != nil || req.RecordType == "" {
+	if req.RecordId == "" || req.RecordType == "" {
 		return nil, status.Error(codes.InvalidArgument, "nil req,invalid recordId or RecordType")
 	}
 	rating, err := h.ctrl.GetAggregatedRating(ctx, model.RecordID(req.RecordId), model.RecordType(req.RecordType))
@@ -45,16 +45,12 @@ func (h *GrpcHandler) GetAggregatedRating(ctx context.Context, req *gen.GetAggre
 // PutRating create a gRPC service to put ratings in records.
 func (h *GrpcHandler) PutRating(ctx context.Context, req *gen.PutRatingRequest) (*gen.PutRatingResponse, error) {
 
-	if req.RecordId == "" || req != nil ||
-		req.RecordType == "" || req.UserId != "" || req.Value == 0 {
-		return nil, status.Error(codes.InvalidArgument, "nil req,invalid recordId or RecordType")
-	}
 	rating := &model.Rating{
 		UserID: model.UserID(req.GetUserId()),
 		Value:  model.RatingValue(req.Value),
 	}
 	err := h.ctrl.PutRating(ctx, model.RecordID(req.RecordId), model.RecordType(req.RecordType), rating)
-	if err != nil || errors.Is(err, controller.ErrNotFound) {
+	if err != nil && errors.Is(err, controller.ErrNotFound) {
 		return nil, status.Error(codes.NotFound, "not found the record")
 	}
 	if err != nil {

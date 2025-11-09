@@ -29,6 +29,7 @@ message GetMetadataResponse {
 }
 
 message PutMetadataRequest{
+    Metadata metadata =1;
 
 }
 

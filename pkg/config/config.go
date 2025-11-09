@@ -63,7 +63,7 @@ func GetConfig() *Config {
 		var err error
 		instance, err = LoadConfig("config.json")
 		if err != nil {
-			instance, err = LoadConfig("../../config.json")
+			instance, err = LoadConfig("../config.json")
 			if err != nil {
 				panic(fmt.Sprintf("Error loading configuración: %v", err))
 			}

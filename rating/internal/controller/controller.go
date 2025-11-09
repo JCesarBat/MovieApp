@@ -55,9 +55,13 @@ func (c *Controller) StartIngestion(ctx context.Context) error {
 func (c *Controller) GetAggregatedRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType) (float64, error) {
 	ratings, err := c.repo.Get(ctx, recordID, recordType)
 
-	if err != nil && err == repository.ErrNotFound {
+	if err != nil {
+		if err == repository.ErrNotFound {
+			return 0, repository.ErrNotFound
+		}
 		return 0, err
 	}
+
 	sum := float64(0)
 	for _, r := range ratings {
 		sum = float64(r.Value)

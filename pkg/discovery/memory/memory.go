@@ -84,17 +84,17 @@ func (r *Registry) ReportHealthyState(instanceId string,
 
 // ServiceAddresses  return a list of addresses of
 // active instances of the given servic.
-func (r *Registry) ServiceAddresses(ctx context.Context, name string) ([]string, error) {
+func (r *Registry) ServicesAddresses(ctx context.Context, instanceID string) ([]string, error) {
 	r.Lock()
 	defer r.Unlock()
-	if _, ok := r.serviceAddrs[serviceName(name)]; !ok {
+	if _, ok := r.serviceAddrs[serviceName(instanceID)]; !ok {
 		return nil, discovery.ErrNotFound
 	}
-	if len(r.serviceAddrs[serviceName(name)]) == 0 {
+	if len(r.serviceAddrs[serviceName(instanceID)]) == 0 {
 		return nil, discovery.ErrNotFound
 	}
 	var list []string
-	for _, i := range r.serviceAddrs[serviceName(name)] {
+	for _, i := range r.serviceAddrs[serviceName(instanceID)] {
 		if i.lastActive.Before(time.Now().Add(-5 * time.Second)) {
 			continue
 		}

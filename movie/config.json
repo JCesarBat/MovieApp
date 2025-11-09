@@ -1,0 +1,5 @@
+{
+    "DB": {
+        "connection_string": "postgresql://postgres:postrgres@localhost:5432/mydatabase?sslmode=disable"
+    }
+}

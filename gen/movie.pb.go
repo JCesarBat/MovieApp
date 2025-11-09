@@ -231,6 +231,7 @@ func (x *GetMetadataResponse) GetMetadata() *Metadata {
 
 type PutMetadataRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Metadata      *Metadata              `protobuf:"bytes,1,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -263,6 +264,13 @@ func (x *PutMetadataRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use PutMetadataRequest.ProtoReflect.Descriptor instead.
 func (*PutMetadataRequest) Descriptor() ([]byte, []int) {
 	return file_movie_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PutMetadataRequest) GetMetadata() *Metadata {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
 }
 
 type PutMetadataResponse struct {
@@ -517,8 +525,9 @@ const file_movie_proto_rawDesc = "" +
 	"\x12GetMetadataRequest\x12\x19\n" +
 	"\bmovie_id\x18\x01 \x01(\tR\amovieId\"<\n" +
 	"\x13GetMetadataResponse\x12%\n" +
-	"\bmetadata\x18\x01 \x01(\v2\t.MetadataR\bmetadata\"\x14\n" +
-	"\x12PutMetadataRequest\"\x15\n" +
+	"\bmetadata\x18\x01 \x01(\v2\t.MetadataR\bmetadata\";\n" +
+	"\x12PutMetadataRequest\x12%\n" +
+	"\bmetadata\x18\x01 \x01(\v2\t.MetadataR\bmetadata\"\x15\n" +
 	"\x13PutMetadataResponse\"Z\n" +
 	"\x1aGetAggregatedRatingRequest\x12\x1b\n" +
 	"\trecord_id\x18\x01 \x01(\tR\brecordId\x12\x1f\n" +
@@ -568,19 +577,20 @@ var file_movie_proto_goTypes = []any{
 var file_movie_proto_depIdxs = []int32{
 	0, // 0: MovieDetails.metadata:type_name -> Metadata
 	0, // 1: GetMetadataResponse.metadata:type_name -> Metadata
-	2, // 2: MetadataService.GetMetadata:input_type -> GetMetadataRequest
-	4, // 3: MetadataService.PutMetadata:input_type -> PutMetadataRequest
-	6, // 4: RatingService.GetAggregatedRating:input_type -> GetAggregatedRatingRequest
-	8, // 5: RatingService.PutRating:input_type -> PutRatingRequest
-	3, // 6: MetadataService.GetMetadata:output_type -> GetMetadataResponse
-	5, // 7: MetadataService.PutMetadata:output_type -> PutMetadataResponse
-	7, // 8: RatingService.GetAggregatedRating:output_type -> GetAggregatedRatingResponse
-	9, // 9: RatingService.PutRating:output_type -> PutRatingResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // 2: PutMetadataRequest.metadata:type_name -> Metadata
+	2, // 3: MetadataService.GetMetadata:input_type -> GetMetadataRequest
+	4, // 4: MetadataService.PutMetadata:input_type -> PutMetadataRequest
+	6, // 5: RatingService.GetAggregatedRating:input_type -> GetAggregatedRatingRequest
+	8, // 6: RatingService.PutRating:input_type -> PutRatingRequest
+	3, // 7: MetadataService.GetMetadata:output_type -> GetMetadataResponse
+	5, // 8: MetadataService.PutMetadata:output_type -> PutMetadataResponse
+	7, // 9: RatingService.GetAggregatedRating:output_type -> GetAggregatedRatingResponse
+	9, // 10: RatingService.PutRating:output_type -> PutRatingResponse
+	7, // [7:11] is the sub-list for method output_type
+	3, // [3:7] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_movie_proto_init() }

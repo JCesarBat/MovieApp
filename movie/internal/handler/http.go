@@ -30,6 +30,7 @@ func (h *Handler) GetMovieDetails(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
+
 	ctx := r.Context()
 	movieDetails, err := h.ctrl.Get(ctx, id)
 	if err != nil && errors.Is(err, controller.ErrNotFound) {

@@ -6,6 +6,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"google.golang.org/grpc"
@@ -29,7 +33,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+
 	instanceID := discovery.GenerateInstanceID(ServiceName)
 	if err := registry.Register(ctx, instanceID, ServiceName, fmt.Sprintf("localhost:%s", cfg.ServiceConfig.APIConfig.Port)); err != nil {
 		panic(err)
@@ -56,7 +61,22 @@ func main() {
 	}
 	srv := grpc.NewServer()
 	gen.RegisterRatingServiceServer(srv, h)
+
+	// Configuring the gracefullShutDown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s := <-sigChan
+		cancel()
+		log.Printf("Received signal %v, attempting graceful shutdown", s)
+		srv.GracefulStop()
+		log.Println("Gracefully stopped the gRPC server")
+	}()	
 	srv.Serve(lis)
+	wg.Wait()
 }
 
 type Router struct {
